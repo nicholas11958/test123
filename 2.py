@@ -3,7 +3,6 @@ import requests as req  # для выполнения HTTP-запросов
 import pandas as pd  # для обработки данных
 from datetime import datetime, timedelta  # для работы с датами
 import json  # для парсинга json
-from clickhouse_driver import Client  # для подключения к ClickHouse
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 import xml.etree.ElementTree as ET  # для парсинга XML
@@ -12,13 +11,6 @@ import xml.etree.ElementTree as ET  # для парсинга XML
 URL = 'http://www.cbr.ru/scripts/XML_daily.asp'  # URL для получения курсов валют с сайта ЦБ
 DATE = '01/01/2022'
 
-# Настройка подключения к базе данных ClickHouse
-CH_CLIENT = Client(
-    host='158.160.116.58',  # IP-адрес сервера ClickHouse
-    user='student',  # Имя пользователя для подключения
-    password='sdf4wgw3r',  # Пароль для подключения
-    database='sandbox'  # База данных, к которой подключаемся
-)
 
 # Функция для извлечения данных с API Центрального банка и сохранения их в локальный файл
 def extract_data(url, date, s_file):
@@ -97,12 +89,6 @@ with DAG(
         op_args=['currency', 'currency.csv', DATE],
         dag=dag
     )
-    upload_to_clickhouse = PythonOperator(
-        task_id='upload_to_clickhouse',
-        python_callable=upload_to_clickhouse,
-        op_args=['currency.csv', 'CBR_NIKOS2', CH_CLIENT],
-        dag=dag
-    )
 
-extract_task >> transform_data >> upload_to_clickhouse
+extract_task >> transform_data
  
